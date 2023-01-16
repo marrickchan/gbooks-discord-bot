@@ -1,0 +1,10 @@
+{
+  "name": "book-bot",
+  "version": "1.0.0",
+  "description": "Bot to look at books",
+  "main": "books.js",
+  "author": "Marrick Chan",
+  "dependencies": {
+    "discord.js": "^14.7.1"
+  }
+}
