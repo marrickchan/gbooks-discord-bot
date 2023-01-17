@@ -10,7 +10,7 @@ const https = require('https');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('lookup')
-		.setDescription('Find book')
+		.setDescription('Find books')
     .addStringOption(option =>
       option.setName('search-term')
         .setDescription('Search term (can be book or author')
