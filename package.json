@@ -1,9 +1,9 @@
 {
-  "name": "book-bot",
+  "name": "nooner-bot",
   "version": "1.0.0",
-  "description": "Bot to look at books",
+  "description": "Bot to look at books at NOON",
   "main": "books.js",
-  "author": "Marrick Chan",
+  "author": "Merrick Chan",
   "dependencies": {
     "discord.js": "^14.7.1"
   }
