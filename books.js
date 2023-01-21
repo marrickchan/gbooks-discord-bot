@@ -21,9 +21,16 @@ client.once(Events.ClientReady, () => {
 });
 
 // Bugs List
-// 1. inside the nba bubble > click Forward > error [ExpectedConstraintError: Invalid URL]
-// 2. 1984 > Error
-// 3. rusty loves marLON > Error
+// 1. fixed - inside the nba bubble > click Forward > error [ExpectedConstraintError: Invalid URL]
+        // cause: empty url for setImage in embed
+// 2. fixed - 1984 > Error
+// 2a. fixed - diary of anne frank > TypeError: Cannot read properties of undefined (reading 'join')
+//     at getResults (44:48) // resObj.author = result.authors.join(',');
+        // cause: empty author results
+// 3. fixed - rusty loves marLON > Error
+        // cause: empty ratings/page count
+// 5. complete - test empty data
+        // tested empty pageCount results in 'N/A'
 
 client.on(Events.InteractionCreate, async interaction => {
     function limit(textSnippet) {
@@ -40,16 +47,17 @@ client.on(Events.InteractionCreate, async interaction => {
 
         for (let i = 0; i < resultCount; i += 1) {
             const result = searchResults.items[i].volumeInfo;
+            console.log('getResults', result);
 
             // Only continue if has results
             if (result && result != null) {
                 const resObj = {};
-                resObj.title = result.title;
-                resObj.publishedDate = result.publishedDate;
-                resObj.author = result.authors.join(',');
-                resObj.rating =  result.averageRating + ' (' + result.ratingsCount + ' ratings)';
-                resObj.pageCount = result.pageCount;
-                resObj.description = '';
+                resObj.title = result.title || 'N/A';
+                resObj.publishedDate = result.publishedDate || 'N/A';
+                resObj.author = result.authors ? result.authors.join(',') : 'N/A';
+                resObj.rating =  result.averageRating ? result.averageRating + ' (' + result.ratingsCount + ' ratings)' : 'N/A';
+                resObj.pageCount = result.pageCount || 'N/A';
+                resObj.description = 'N/A';
                 if (result.description && result.description !== null) {
                     if (resultCount == 1) {
                         resObj.description = limit(result.description);
@@ -59,8 +67,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
                 
                 // Single Result Items?
-                resObj.link = result.infoLink;
-                resObj.thumbnailUrl = '';
+                resObj.link = result.infoLink || 'N/A';
+                resObj.thumbnailUrl = null;
                 if (result.imageLinks) {
                     resObj.thumbnailUrl = result.imageLinks.thumbnail;
                 }
@@ -81,63 +89,6 @@ client.on(Events.InteractionCreate, async interaction => {
 	const { commandName } = interaction;
 	await interaction.deferReply();
 
-    /* if (commandName === 'lookup') {
-        // Get the results of the lookup
-        const searchTerm = interaction.options.getString('search-term');
-		const { statusCode, body} = await request("https://www.googleapis.com/books/v1/volumes?maxResults=40&q=" + searchTerm + "&key=" + apiKey);
-        console.log(statusCode);
-
-        if (statusCode !== 200) {
-            interaction.editReply('Could not reach server');
-        } else {
-            // Get Body to Parse
-            const searchResults = await body.json();
-
-            // Only get first result for now. Could loop and add scrolling
-            // TEMPORARY RESULT LOGGING
-            const singleResult = getResults(searchResults, 1); 
-            // console.log('results', singleResult);
-            
-            // TODO: ADD NO RESULT CONDITION. EMPTY EMBED?
-
-            try {
-                const embed = new EmbedBuilder()
-                    .setColor(0xEFFF00)
-                    .setTitle(singleResult[0].title)
-                    .setURL(singleResult[0].link)
-                    .setImage(singleResult[0].thumbnailUrl)
-                    .addFields({
-                        name: 'Search Term',
-                        value: searchTerm
-                    }, 
-                    {
-                        name: 'Date Published',
-                        value: singleResult[0].publishedDate || ''
-                    },
-                    {
-                        name: 'Author',
-                        value: singleResult[0].author || ''
-                    },
-                    {
-                        name: 'Rating',
-                        value: singleResult[0].rating || ''
-                    },
-                    {
-                        name: 'Page Count',
-                        value: singleResult[0].pageCount + '' || ''
-                    },
-                    {
-                        name: 'Description',
-                        value: limit(singleResult[0].description) || ''
-                    }) 
-
-                interaction.editReply({ embeds: [embed] });
-            } catch (e) {
-                console.log(e.message);
-            }
-        }
-        
-	} else */ 
     if (commandName === 'lookup') {
         // Get the results of the lookup
         const pageSize = 1;
@@ -183,11 +134,10 @@ client.on(Events.InteractionCreate, async interaction => {
                 const current = results.slice(start, start + pageSize)
 
                 // You can of course customise this embed however you want
-                return new EmbedBuilder({
+                const embedResults = new EmbedBuilder({
                     title: `${searchTerm} search results ${start + current.length} out of ${
                     results.length
                     }`, // Change hyperlink to be on title
-                    url: current[0].link,
                     fields: await Promise.all(
                     current.map(async result => ({ // TODO: Add Links
                         name: result.title,
@@ -198,7 +148,15 @@ client.on(Events.InteractionCreate, async interaction => {
                                 **Description:** ${result.description}\n`
                     }))
                     )
-                }).setImage(current[0].thumbnailUrl);
+                });
+                if (current[0].thumbnailUrl && current[0].thumbnailUrl !== null) {
+                    embedResults.setImage(current[0].thumbnailUrl);
+                }
+                if (current[0].link && current[0].link !== null) {
+                    embedResults.setURL(current[0].link)
+                }
+
+                return embedResults;
             }
 
             // Send the embed with the first 10 guilds
