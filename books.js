@@ -41,6 +41,20 @@ client.on(Events.InteractionCreate, async interaction => {
         return textSnippet.substring(0,700) + ' (more...)'; // TODO: ERROR HANDLING
     }
 
+    function getISBN13(isbnList) {
+        if (isbnList.length == 0) {
+            return 'N/A';
+        }
+
+        for (let i = 0; i < isbnList.length; i += 1) {
+            if (isbnList[i].type === 'ISBN_13') {
+                return isbnList[i].identifier;
+            }
+        }
+
+        return 'N/A';
+    }
+
     function getResults(searchResults, resultCount) {
         const resArr = [];
         resultCount = Math.min(resultCount, searchResults.items.length);
@@ -57,6 +71,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 resObj.author = result.authors ? result.authors.join(',') : 'N/A';
                 resObj.rating =  result.averageRating ? result.averageRating + ' (' + result.ratingsCount + ' ratings)' : 'N/A';
                 resObj.pageCount = result.pageCount || 'N/A';
+                resObj.isbn13 = getISBN13(result.industryIdentifiers);
                 resObj.description = 'N/A';
                 if (result.description && result.description !== null) {
                     if (resultCount == 1) {
@@ -142,19 +157,24 @@ client.on(Events.InteractionCreate, async interaction => {
                     current.map(async result => ({ // TODO: Add Links
                         name: result.title,
                         value: `**Date Published:** ${result.publishedDate}\n
+                                **ISBN 13:** ${result.isbn13}\n
                                 **Author:** ${result.author}\n
                                 **Rating:** ${result.rating}\n
                                 **Page Count:** ${result.pageCount}\n
-                                **Description:** ${result.description}\n`
+                                **Description:** ${result.description}\n`.substring(0,1000)
                     }))
                     )
                 });
                 if (current[0].thumbnailUrl && current[0].thumbnailUrl !== null) {
                     embedResults.setImage(current[0].thumbnailUrl);
                 }
-                if (current[0].link && current[0].link !== null) {
-                    embedResults.setURL(current[0].link)
+                if (current[0].isbn13 && current[0].isbn13 !== 'N/A') {
+                    embedResults.setURL('https://goodreads.com/search?q=' + current[0].isbn13);
                 }
+                /*
+                if (current[0].link && current[0].link !== 'N/A'') {
+                    embedResults.setURL(current[0].link)
+                }*/
 
                 return embedResults;
             }
